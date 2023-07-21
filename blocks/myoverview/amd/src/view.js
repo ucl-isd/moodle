@@ -96,7 +96,8 @@ const DEFAULT_PAGED_CONTENT_CONFIG = {
  * @return {promise} Resolved with an array of courses.
  */
 const getMyCourses = (filters, limit) => {
-    return Repository.getEnrolledCoursesByTimeline({
+    // CATALYST CUSTOM: WR409112 - Call new function.
+    return Repository.getCourses({
         offset: courseOffset,
         limit: limit,
         classification: filters.grouping,
@@ -104,6 +105,7 @@ const getMyCourses = (filters, limit) => {
         customfieldname: filters.customfieldname,
         customfieldvalue: filters.customfieldvalue
     });
+    // CATALYST CUSTOM END.
 };
 
 /**
@@ -115,7 +117,8 @@ const getMyCourses = (filters, limit) => {
  * @return {promise} Resolved with an array of courses.
  */
 const getSearchMyCourses = (filters, limit, searchValue) => {
-    return Repository.getEnrolledCoursesByTimeline({
+    // CATALYST CUSTOM: WR409112 - Call new function.
+    return Repository.getCourses({
         offset: courseOffset,
         limit: limit,
         classification: 'search',
@@ -124,6 +127,7 @@ const getSearchMyCourses = (filters, limit, searchValue) => {
         customfieldvalue: filters.customfieldvalue,
         searchvalue: searchValue
     });
+    // CATALYST CUSTOM END.
 };
 
 /**
