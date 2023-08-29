@@ -188,6 +188,17 @@ if (!empty($overtime)) {
 
 // Show marks (if the user is allowed to see marks at the moment).
 $grade = quiz_rescale_grade($attempt->sumgrades, $quiz, false);
+$additional_summary_data = $attemptobj->get_additional_summary_data($options);
+$cbmattempt = array_key_exists('cbmdata',$additional_summary_data);
+if($cbmattempt) {
+    $cbmdata = $additional_summary_data['cbmdata'];
+    //Scale CB grade to $quiz->grade
+    $a = new stdClass();
+    $a->grade = html_writer::tag('b', quiz_format_grade($quiz, $cbmdata['cbgradefraction'] * $quiz->grade));
+    $a->maxgrade = quiz_format_grade($quiz, $quiz->grade);
+    $formattedgrade = get_string('cbgradeoutof', 'qbehaviour_deferredcbm', $a);
+    $additional_summary_data['qbehaviour_cbm_entire_quiz_cb_grade']['content'] = $formattedgrade;
+}
 if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades($quiz)) {
 
     if ($attempt->state != quiz_attempt::FINISHED) {
@@ -200,10 +211,42 @@ if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades
         );
 
     } else {
+        // Default values without CBM
+        $marks = $attempt->sumgrades;
+        $showgrade = $grade;
+        $percent = $marks * 100 / $quiz->sumgrades;
+        // Handle if quiz and/or attempt use CBM
+        $cbmquiz = ($quiz->preferredbehaviour === 'immediatecbm') || ($quiz->preferredbehaviour === 'deferredcbm');
+        if ($cbmattempt) {
+            // Attempt was done with CBM
+            if ($cbmquiz) {
+                $marks = $cbmdata['averagecbm'] * $quiz->sumgrades;
+                $showgrade = $cbmdata['gradefraction'] * $quiz->grade;
+                $percent = $cbmdata['gradefraction'] * 100;
+            }
+            else {
+                $marks = $cbmdata['accuracy'] * $quiz->sumgrades;
+                $showgrade = $cbmdata['accuracy'] * $quiz->grade;
+                $percent = $cbmdata['accuracy'] * 100;
+                $additional_summary_data['qbehaviour_cbm_grade_explanation'] = array(
+                        'title'   => '',
+                        'content' => get_string('attemptwithcbm', 'qbehaviour_deferredcbm'),
+                );
+            }
+        }
+        else {
+            if ($cbmquiz) {
+                $additional_summary_data['qbehaviour_cbm_grade_explanation'] = array(
+                        'title'   => '',
+                        'content' => get_string('attemptwithoutcbm', 'qbehaviour_deferredcbm'),
+                );
+            }
+        }
+
         // Show raw marks only if they are different from the grade (like on the view page).
         if ($quiz->grade != $quiz->sumgrades) {
             $a = new stdClass();
-            $a->grade = quiz_format_grade($quiz, $attempt->sumgrades);
+            $a->grade = quiz_format_grade($quiz, $marks);
             $a->maxgrade = quiz_format_grade($quiz, $quiz->sumgrades);
             $summarydata['marks'] = array(
                 'title'   => get_string('marks', 'quiz'),
@@ -213,13 +256,13 @@ if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades
 
         // Now the scaled grade.
         $a = new stdClass();
-        $a->grade = html_writer::tag('b', quiz_format_grade($quiz, $grade));
+        $a->grade = html_writer::tag('b', quiz_format_grade($quiz, $showgrade));
         $a->maxgrade = quiz_format_grade($quiz, $quiz->grade);
         if ($quiz->grade != 100) {
             // Show the percentage using the configured number of decimal places,
             // but without trailing zeroes.
             $a->percent = html_writer::tag('b', format_float(
-                    $attempt->sumgrades * 100 / $quiz->sumgrades,
+                    $percent,
                     $quiz->decimalpoints, true, true));
             $formattedgrade = get_string('outofpercent', 'quiz', $a);
         } else {
@@ -233,7 +276,7 @@ if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades
 }
 
 // Any additional summary data from the behaviour.
-$summarydata = array_merge($summarydata, $attemptobj->get_additional_summary_data($options));
+$summarydata = array_merge($summarydata, $additional_summary_data);
 
 // Feedback if there is any, and the user is allowed to see it now.
 $feedback = $attemptobj->get_overall_feedback($grade);
