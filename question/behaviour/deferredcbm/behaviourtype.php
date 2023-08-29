@@ -110,7 +110,7 @@ class qbehaviour_deferredcbm_type extends qbehaviour_deferredfeedback_type {
 
         $summarydata['cbmdata']   = array( 'title' => '', 'content' => '',
                 'accuracy'         => $accuracy,
-                'gradefraction'    => $averagecbm,
+                'gradefraction'    => $accuracyandbonus,
                 'cbgradefraction'  => $accuracyandbonus,
                 'averagecbm'       => $averagecbm,
                 'grandtotalweight' => $grandtotalweight,

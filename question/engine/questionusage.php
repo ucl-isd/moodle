@@ -359,11 +359,16 @@ class question_usage_by_activity {
     }
 
     /**
-     * Get the total mark for all questions in this usage.
-     * @return number The sum of marks of all the question_attempts in this usage.
+     * Get the total marks awarded for all questions in an attempt, to set attempt sumgrades
+     * With CBM, sumgrades is calculated differently as CBM accuracy * sum of all the maxmarks for Qs.
+     * @return number|null Grade for the attempt, relative to a max = quiz->sumgrades,
+     * or null if any Q has not yet had a mark assigned.
      */
     public function get_total_mark() {
         $mark = 0;
+        if ( ($this->preferredbehaviour === 'immediatecbm') || ($this->preferredbehaviour === 'deferredcbm') ) {
+            return $this->cbm_total($this->questionattempts);
+        }
         foreach ($this->questionattempts as $qa) {
             if ($qa->get_max_mark() > 0 && $qa->get_state() == question_state::$needsgrading) {
                 return null;
@@ -393,6 +398,47 @@ class question_usage_by_activity {
     public function get_summary_information(question_display_options $options) {
         return question_engine::get_behaviour_type($this->preferredbehaviour)
                 ->summarise_usage($this, $options);
+    }
+
+    /**
+     * Calculate the new CBM Grade for a set of question attempts. Max value is the summed maxmarks (or weights)
+     * for individual Qs. The fraction of this maximum is the CB Accuracy for the whole quiz rather than the
+     * simple (weighted) Accuracy as without CBM. All calculations weight Q accuracy in proportion to set maxmarks.
+     * @param array $qattempts all Q attempts in a quiz attempt
+     * @return number CBM Grade relative to a maximum equal to total maxmarks for the quiz
+     */
+    private function cbm_total($qattempts) {
+        $sumqs = $sumwts = $sumcorr = $summark = 0;
+        foreach ($qattempts as $qa) {
+            $wt=$qa->get_max_mark();
+            if ($wt > 0 && $qa->get_state() == question_state::$needsgrading) {
+                return null;
+            }
+            $sumqs += 1;
+            $sumwts += $wt;
+            $resp = $qa->get_response_summary();
+            if (!is_null($resp)) {
+                // get fractional correctness ignoring CBM from available data
+                $c=$qa->get_fraction();
+                if ($qa->get_state() == 'gradedright') {
+                    $f=1;
+                }
+                else if ($qa->get_state() == 'gradedpartial') {
+                    $f=$c;  //need to create equivalent of rawfraction
+                    if ( strpos($resp, '[' . get_string('certaintyshort2','qbehaviour_deferredcbm') .']' )!== false ) $f/=2;
+                    if ( strpos($resp, '[' . get_string('certaintyshort3','qbehaviour_deferredcbm') .']' )!== false ) $f/=3;
+                }
+                else {
+                    $f=0;
+                }
+                $sumcorr += $f * $wt;
+                $summark += $c * $wt;
+            }
+        }
+        $accy = $sumcorr / $sumwts;
+        $cbmav = $summark / $sumwts;
+        $bonus = 0.1 * ($cbmav - max($accy, -2+4*$accy, -6+9*$accy) );
+        return max(0,$accy + $bonus) * $sumwts;
     }
 
     /**
