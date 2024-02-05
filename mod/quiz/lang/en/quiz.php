@@ -368,6 +368,7 @@ $string['eventpagebreakcreated'] = 'Page break created';
 $string['eventpagebreakdeleted'] = 'Page break deleted';
 $string['eventquestionmanuallygraded'] = 'Question manually graded';
 $string['eventquizattemptabandoned'] = 'Quiz attempt abandoned';
+$string['eventquizattemptgraded'] = 'Quiz attempt graded';
 $string['eventquizattemptregraded'] = 'Quiz attempt regraded';
 $string['eventquizattemptreopened'] = 'Quiz attempt reopened';
 $string['eventquizattemptstarted'] = 'Quiz attempt started';
