@@ -84,6 +84,8 @@ Feature: Testing view quiz grade feedback with recover grades setting
     And I click on "Finish attempt ..." "button" in the "region-main" "region"
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Submit all your answers and finish?" "dialogue"
+    And I run all adhoc tasks
+    And I reload the page
     And I follow "Finish review"
     And I should see "Highest grade: 100.00 / 100.00" in the "[id='feedback']" "css_element"
 
