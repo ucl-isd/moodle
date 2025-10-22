@@ -125,7 +125,7 @@ if ($ADMIN->fulltree) {
         'quiz/precreateattempts',
         get_string('precreateattempts', 'quiz'),
         get_string('precreateattempts_help', 'quiz'),
-        0,
+        1,
     );
     $setting->set_advanced_flag_options(admin_setting_flag::ENABLED, true);
     $setting->set_locked_flag_options(admin_setting_flag::ENABLED, true);
